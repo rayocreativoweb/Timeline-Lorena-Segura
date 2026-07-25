@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline | Lorena Segura Event Planner</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* ESTILOS PREMIUM PARA LA EVENT PLANNER */
+        body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; background-color: #f9f9f9; color: #333; margin: 0; padding: 0; }
+        
+        .header-planner { background-color: #000; color: #fff; text-align: center; padding: 30px 20px; margin-bottom: 20px; }
+        .header-planner img { max-width: 180px; height: auto; margin-bottom: 15px; }
+        .header-planner h1 { margin: 0; font-size: 22px; letter-spacing: 2px; text-transform: uppercase; font-weight: 300; color: #d4af37; }
+        .header-planner p { margin: 5px 0 0 0; font-size: 12px; letter-spacing: 1px; color: #aaa; text-transform: uppercase; }
+
+        .contenedor { padding: 0 20px 20px 20px; max-width: 1300px; margin: 0 auto; }
+
+        .barra-herramientas { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .botones { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn { padding: 10px 16px; font-size: 13px; border-radius: 4px; cursor: pointer; font-weight: bold; border: none; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .btn-extras { background-color: #d4af37; color: #000; }
+        .btn-imprimir { background-color: #333; color: #fff; }
+        .btn-descargar { background-color: #555; color: #fff; }
+        .btn-editar { background-color: #007AFF; color: #fff; }
+        .btn-guardar { background-color: #34C759; color: #fff; display: none; }
+
+        .table-responsive { overflow-x: auto; background: #fff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; }
+
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; vertical-align: top; }
+        th { background-color: #000; color: #fff; font-weight: 500; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Estilos de los campos de texto y notas extras */
+        .editable-field { min-height: 20px; outline: none; }
+        .nota-extra-box { background-color: #fff8e1; border-left: 3px solid #d4af37; padding: 8px; margin-top: 8px; font-size: 12px; border-radius: 0 4px 4px 0; min-height: 18px; outline: none;}
+        .nota-extra-box:empty:before { content: "Datos extras (Ej. Mesas especiales)..."; color: #bcaaa4; font-style: italic; }
+
+        /* Estilos en modo edición */
+        .editando td { background-color: #f0f8ff; border: 1px dashed #cce5ff; }
+        .editando .editable-field, .editando .nota-extra-box { background-color: #fff; border: 1px solid #007AFF; padding: 5px; border-radius: 4px; }
+        input[type="time"] { font-family: inherit; font-size: 14px; padding: 5px; border: 1px solid #007AFF; border-radius: 4px; outline: none; }
+
+        /* Botones de acción en tabla */
+        .col-acciones { display: none; text-align: center; width: 80px; }
+        .btn-fila { padding: 5px 10px; margin: 2px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-add { background-color: #34C759; }
+        .btn-del { background-color: #FF3B30; }
+
+        /* MODAL EXTRAS */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #fff; width: 90%; max-width: 600px; padding: 30px; border-radius: 8px; position: relative; }
+        .close-modal { position: absolute; top: 15px; right: 15px; font-size: 20px; cursor: pointer; border: none; background: none; }
+        .lista-archivos { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .archivo-item { background: #f4f4f9; padding: 10px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; text-align: center; border: 1px solid #ddd; }
+        .archivo-item img { max-width: 100%; height: 120px; object-fit: contain; margin-bottom: 10px; }
+        .archivo-item a { text-decoration: none; color: #007AFF; font-size: 13px; font-weight: bold; margin-bottom: 10px;}
+        .btn-eliminar-archivo { background: #FF3B30; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; display: none; }
+
+        @media print {
+            .no-print, .botones, .modal-overlay, .col-acciones { display: none !important; }
+            @page { size: landscape; margin: 1cm; }
+            body { background-color: transparent; padding: 0; }
+            .header-planner { background-color: transparent; color: #000; padding: 0; margin-bottom: 20px; }
+            .header-planner h1 { color: #000; }
+            .table-responsive { box-shadow: none; border-radius: 0; padding: 0; }
+            table { min-width: 100%; border: 2px solid #000; }
+            th, td { border: 1px solid #000; padding: 8px; font-size: 10pt; color: #000; }
+            th { background-color: #e0e0e0 !important; color: #000; -webkit-print-color-adjust: exact; }
+            .nota-extra-box:empty { display: none; } /* Oculta cajas vacías en el PDF */
+            .nota-extra-box { border-left: 2px solid #000; background-color: transparent; }
+            tr { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-planner">
+        <img src="logols.png" alt="Lorena Segura Event Planner">
+        <h1>Timeline & Master Plan | XV Años</h1>
+        <p>Operación Exclusiva - Personal Autorizado</p>
+    </div>
+
+    <div class="contenedor">
+        <div class="barra-herramientas no-print">
+            <button class="btn btn-extras" onclick="abrirModal()">Ver Material Extra</button>
+            <div class="botones">
+                <button class="btn btn-editar" id="btnEditar">Modificar Programa</button>
+                <button class="btn btn-guardar" id="btnGuardar">Guardar Cambios</button>
+                <button class="btn btn-descargar" id="btnDescargar">Descargar PDF</button>
+                <button class="btn btn-imprimir" onclick="window.print()">Imprimir</button>
+            </div>
+        </div>
+
+        <div class="table-responsive" id="contenedorPrograma">
+            <table id="tablaPrograma">
+                <thead>
+                    <tr>
+                        <th style="width: 10%;">Hora</th>
+                        <th style="width: 18%;">Actividad</th>
+                        <th style="width: 25%;">Logística / Planner</th>
+                        <th style="width: 22%;">Maestro Ceremonia</th>
+                        <th style="width: 20%;">Música / DJ</th>
+                        <th class="col-acciones no-print">Ajustes</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoTabla">
+                    <!-- El contenido se inyecta por JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL DE EXTRAS -->
+    <div class="modal-overlay" id="modalExtras">
+        <div class="modal-content">
+            <button class="close-modal" onclick="cerrarModal()">×</button>
+            <h2>Material Extra del Evento</h2>
+            <p style="font-size: 14px; color: #666;">Croquis, listas de invitados y documentos.</p>
+            <div id="zonaSubida" style="display: none; margin-bottom: 15px; padding: 15px; background: #eee; border-radius: 6px;">
+                <label style="font-weight: bold; font-size: 13px; display: block; margin-bottom: 8px;">Cargar nuevo archivo (PDF, JPG, PNG):</label>
+                <input type="file" id="fileInput" accept=".pdf, .jpg, .jpeg, .png">
+            </div>
+            <div class="lista-archivos" id="listaArchivos"></div>
+        </div>
+    </div>
+
+    <script>
+        const PIN_SECRETO = "1234"; 
+        let modoEdicionActivo = false;
+        
+        // Base de datos inicial con todos los horarios pre-cargados
+        const datosPorDefecto = [
+            { time: "18:00", act: "", logMain: "Recepción y cócteles de bienvenida", logExt: "", mc: "Primera Llamada", dj: "Marimba Instrumental" },
+            { time: "18:30", act: "", logMain: "", logExt: "", mc: "Tercera Llamada y Entrada Corte", dj: "\"Perfil\" By Hector David - Video De Fotos en Pantalla" },
+            { time: "18:55", act: "", logMain: "", logExt: "", mc: "Entrada Papás y Quinceañera", dj: "Suit by Hector David" },
+            { time: "19:15", act: "", logMain: "", logExt: "", mc: "Primer Número", dj: "Desde el Amanecer By Rojo" },
+            { time: "19:20", act: "", logMain: "", logExt: "", mc: "Tiempo Palabras Emotivas", dj: "Música de fondo" },
+            { time: "19:25", act: "", logMain: "", logExt: "", mc: "Entrada Mariachi", dj: "Mariachi En vivo - Pantalla Con fotos" },
+            { time: "19:45", act: "", logMain: "", logExt: "", mc: "Despedida Mariachi", dj: "Marimba" },
+            { time: "19:50", act: "", logMain: "", logExt: "", mc: "Cena - Marimba", dj: "Marimba de Fondo" },
+            { time: "21:50", act: "", logMain: "", logExt: "", mc: "Intro al 3er Número Zapatilla", dj: "Música de Fondo" },
+            { time: "22:00", act: "", logMain: "", logExt: "", mc: "Tercer Número Zapatilla", dj: "Música Pendiente" },
+            { time: "22:05", act: "", logMain: "", logExt: "", mc: "Canto especial con sus papás", dj: "Eres mi alegría Dauny&Saul" },
+            { time: "22:10", act: "", logMain: "", logExt: "", mc: "Intro Cuarto Número", dj: "Música de fondo" },
+            { time: "22:20", act: "", logMain: "", logExt: "", mc: "Cuarto Numero Muñeca", dj: "Mix: Suit & Valentina" },
+            { time: "22:35", act: "", logMain: "", logExt: "", mc: "Entrega Ramo", dj: "Suit H. David." },
+            { time: "22:50", act: "", logMain: "", logExt: "", mc: "Transición a Fiesta, payaso etc.", dj: "" }
+        ];
+
+        let datosPrograma = JSON.parse(localStorage.getItem("bd_programa_ls")) || datosPorDefecto;
+
+        // Función para convertir hora 24h (18:00) a 12h (6:00 PM)
+        function format12Hour(time24) {
+            if(!time24) return "";
+            let [h, m] = time24.split(':');
+            let ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return `${h}:${m} ${ampm}`;
+        }
+
+        function renderizarTabla() {
+            const tbody = document.getElementById("cuerpoTabla");
+            tbody.innerHTML = "";
+            
+            datosPrograma.forEach((fila, index) => {
+                const tr = document.createElement("tr");
+                
+                let timeContent = modoEdicionActivo 
+                    ? `<input type="time" class="time-input" value="${fila.time}">` 
+                    : `<strong>${format12Hour(fila.time)}</strong>`;
+
+                let editAttr = modoEdicionActivo ? 'contenteditable="true"' : 'contenteditable="false"';
+
+                tr.innerHTML = `
+                    <td>${timeContent}</td>
+                    <td><div class="editable-field" ${editAttr}>${fila.act}</div></td>
+                    <td>
+                        <div class="editable-field" ${editAttr}>${fila.logMain}</div>
+                        <div class="nota-extra-box" ${editAttr}>${fila.logExt}</div>
+                    </td>
+                    <td><div class="editable-field" ${editAttr}>${fila.mc}</div></td>
+                    <td><div class="editable-field" ${editAttr}>${fila.dj}</div></td>
+                    <td class="col-acciones no-print" style="display: ${modoEdicionActivo ? 'table-cell' : 'none'};">
+                        <button class="btn-fila btn-add" onclick="agregarFila(${index})" title="Insertar renglón abajo">+</button>
+                        <button class="btn-fila btn-del" onclick="borrarFila(${index})" title="Borrar este renglón">-</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            // Mostrar u ocultar título de la columna extra
+            document.querySelector('.col-acciones').style.display = modoEdicionActivo ? 'table-cell' : 'none';
+        }
+
+        // Funciones de inserción y borrado de filas
+        window.agregarFila = function(index) {
+            const nuevaFila = { time: "", act: "", logMain: "", logExt: "", mc: "", dj: "" };
+            datosPrograma.splice(index + 1, 0, nuevaFila);
+            renderizarTabla();
+        };
+
+        window.borrarFila = function(index) {
+            if(confirm("¿Seguro que deseas eliminar este horario?")) {
+                datosPrograma.splice(index, 1);
+                renderizarTabla();
+            }
+        };
+
+        // Guardar desde el DOM a la base de datos
+        function recopilarDatosDePantalla() {
+            const tbody = document.getElementById("cuerpoTabla");
+            const trs = tbody.querySelectorAll("tr");
+            const nuevosDatos = [];
+            
+            trs.forEach(tr => {
+                nuevosDatos.push({
+                    time: tr.querySelector('.time-input') ? tr.querySelector('.time-input').value : "",
+                    act: tr.querySelectorAll('.editable-field')[0].innerText,
+                    logMain: tr.querySelectorAll('.editable-field')[1].innerText,
+                    logExt: tr.querySelector('.nota-extra-box').innerText,
+                    mc: tr.querySelectorAll('.editable-field')[2].innerText,
+                    dj: tr.querySelectorAll('.editable-field')[3].innerText
+                });
+            });
+            datosPrograma = nuevosDatos;
+            localStorage.setItem("bd_programa_ls", JSON.stringify(datosPrograma));
+        }
+
+        // Botones Principales
+        document.getElementById("btnEditar").addEventListener("click", function() {
+            let pinIngresado = prompt("Ingresa el PIN de seguridad de Lorena Segura:");
+            if (pinIngresado === PIN_SECRETO) {
+                modoEdicionActivo = true;
+                document.getElementById("tablaPrograma").classList.add("editando");
+                document.getElementById("btnEditar").style.display = "none";
+                document.getElementById("btnGuardar").style.display = "inline-block";
+                document.getElementById("zonaSubida").style.display = "block";
+                renderizarTabla();
+                renderizarArchivos(); 
+            } else if (pinIngresado !== null) { alert("PIN incorrecto."); }
+        });
+
+        document.getElementById("btnGuardar").addEventListener("click", function() {
+            recopilarDatosDePantalla();
+            modoEdicionActivo = false;
+            document.getElementById("tablaPrograma").classList.remove("editando");
+            document.getElementById("btnGuardar").style.display = "none";
+            document.getElementById("btnEditar").style.display = "inline-block";
+            document.getElementById("zonaSubida").style.display = "none";
+            renderizarTabla();
+            renderizarArchivos();
+            alert("Programa actualizado correctamente.");
+        });
+
+        // Modal y PDFs
+        document.getElementById("btnDescargar").addEventListener("click", function() {
+            const elemento = document.getElementById("contenedorPrograma");
+            html2pdf().set({
+                margin: 10, filename: 'Master_Plan_XV.pdf', image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            }).from(elemento).save();
+        });
+
+        window.abrirModal = () => document.getElementById("modalExtras").style.display = "flex";
+        window.cerrarModal = () => document.getElementById("modalExtras").style.display = "none";
+
+        // Inicialización
+        window.onload = function() {
+            renderizarTabla();
+            renderizarArchivos();
+        };
+
+        // GESTIÓN DE ARCHIVOS (Igual que en la versión anterior)
+        const fileInput = document.getElementById("fileInput");
+        const listaArchivos = document.getElementById("listaArchivos");
+        fileInput.addEventListener("change", function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 2500000) { alert("El archivo supera los 2.5MB. Comprímelo por favor."); fileInput.value = ""; return; }
+            const reader = new FileReader();
+            reader.onload = function(evento) {
+                try {
+                    let archivos = JSON.parse(localStorage.getItem("extrasXV_ls")) || [];
+                    archivos.push({ nombre: file.name, tipo: file.type, data: evento.target.result });
+                    localStorage.setItem("extrasXV_ls", JSON.stringify(archivos));
+                    renderizarArchivos();
+                    fileInput.value = "";
+                } catch (e) { alert("Memoria llena. Borra otros archivos."); }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function renderizarArchivos() {
+            listaArchivos.innerHTML = "";
+            let archivos = JSON.parse(localStorage.getItem("extrasXV_ls")) || [];
+            if (archivos.length === 0) { listaArchivos.innerHTML = "<p style='grid-column: span 2; text-align: center; color: #999;'>No hay material extra cargado.</p>"; return; }
+            archivos.forEach((archivo, index) => {
+                const div = document.createElement("div"); div.className = "archivo-item";
+                if (archivo.tipo.includes("image")) { div.innerHTML = `<img src="${archivo.data}"><a href="${archivo.data}" download="${archivo.nombre}">Descargar ${archivo.nombre}</a>`; }
+                else if (archivo.tipo.includes("pdf")) { div.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:50px;height:50px;margin:20px 0;"><a href="${archivo.data}" download="${archivo.nombre}">Descargar PDF</a>`; }
+                if (modoEdicionActivo) {
+                    const btn = document.createElement("button"); btn.className = "btn-eliminar-archivo"; btn.innerText = "Eliminar"; btn.style.display = "inline-block";
+                    btn.onclick = () => { if(confirm("¿Eliminar?")) { archivos.splice(index, 1); localStorage.setItem("extrasXV_ls", JSON.stringify(archivos)); renderizarArchivos(); } };
+                    div.appendChild(btn);
+                }
+                listaArchivos.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
