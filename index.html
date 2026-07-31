@@ -18,7 +18,7 @@
 
         .barra-herramientas { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         .botones { display: flex; gap: 8px; flex-wrap: wrap; }
-        .btn { padding: 10px 16px; font-size: 13px; border-radius: 4px; cursor: pointer; font-weight: bold; border: none; text-transform: uppercase; letter-spacing: 1px; }
+        .btn { padding: 10px 16px; font-size: 13px; border-radius: 4px; cursor: pointer; font-weight: bold; border: none; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; display: inline-block; text-align: center;}
         
         .btn-extras { background-color: #d4af37; color: #000; }
         .btn-imprimir { background-color: #333; color: #fff; }
@@ -48,18 +48,8 @@
         .btn-add { background-color: #34C759; }
         .btn-del { background-color: #FF3B30; }
 
-        /* MODAL EXTRAS */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: #fff; width: 90%; max-width: 600px; padding: 30px; border-radius: 8px; position: relative; }
-        .close-modal { position: absolute; top: 15px; right: 15px; font-size: 20px; cursor: pointer; border: none; background: none; }
-        .lista-archivos { margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .archivo-item { background: #f4f4f9; padding: 10px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; text-align: center; border: 1px solid #ddd; }
-        .archivo-item img { max-width: 100%; height: 120px; object-fit: contain; margin-bottom: 10px; }
-        .archivo-item a { text-decoration: none; color: #007AFF; font-size: 13px; font-weight: bold; margin-bottom: 10px;}
-        .btn-eliminar-archivo { background: #FF3B30; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; display: none; }
-
         @media print {
-            .no-print, .botones, .modal-overlay, .col-acciones { display: none !important; }
+            .no-print, .botones, .col-acciones { display: none !important; }
             @page { size: landscape; margin: 1cm; }
             body { background-color: transparent; padding: 0; }
             .header-planner { background-color: transparent; color: #000; padding: 0; margin-bottom: 20px; }
@@ -84,7 +74,9 @@
 
     <div class="contenedor">
         <div class="barra-herramientas no-print">
-            <button class="btn btn-extras" onclick="abrirModal()">Ver Material Extra</button>
+            <!-- AQUÍ PONES EL ENLACE DE TU CARPETA DE GOOGLE DRIVE -->
+            <a href="https://drive.google.com/drive/folders/1k7GE89B_CvYkjiM2e80Blg3yagQXUzrk?usp=drive_link" target="_blank" class="btn btn-extras">Ver Material Extra (Drive)</a>
+            
             <div class="botones">
                 <button class="btn btn-editar" id="btnEditar">Modificar Programa</button>
                 <button class="btn btn-guardar" id="btnGuardar">Guardar Cambios</button>
@@ -112,22 +104,8 @@
         </div>
     </div>
 
-    <!-- MODAL DE EXTRAS -->
-    <div class="modal-overlay" id="modalExtras">
-        <div class="modal-content">
-            <button class="close-modal" onclick="cerrarModal()">×</button>
-            <h2>Material Extra del Evento</h2>
-            <p style="font-size: 14px; color: #666;">Croquis, listas de invitados y documentos.</p>
-            <div id="zonaSubida" style="display: none; margin-bottom: 15px; padding: 15px; background: #eee; border-radius: 6px;">
-                <label style="font-weight: bold; font-size: 13px; display: block; margin-bottom: 8px;">Cargar nuevo archivo (PDF, JPG, PNG):</label>
-                <input type="file" id="fileInput" accept=".pdf, .jpg, .jpeg, .png">
-            </div>
-            <div class="lista-archivos" id="listaArchivos"></div>
-        </div>
-    </div>
-
     <script>
-        const PIN_SECRETO = "2027"; 
+        const PIN_SECRETO = "1234"; 
         let modoEdicionActivo = false;
         
         // Base de datos inicial con todos los horarios pre-cargados
@@ -236,9 +214,7 @@
                 document.getElementById("tablaPrograma").classList.add("editando");
                 document.getElementById("btnEditar").style.display = "none";
                 document.getElementById("btnGuardar").style.display = "inline-block";
-                document.getElementById("zonaSubida").style.display = "block";
                 renderizarTabla();
-                renderizarArchivos(); 
             } else if (pinIngresado !== null) { alert("PIN incorrecto."); }
         });
 
@@ -248,13 +224,11 @@
             document.getElementById("tablaPrograma").classList.remove("editando");
             document.getElementById("btnGuardar").style.display = "none";
             document.getElementById("btnEditar").style.display = "inline-block";
-            document.getElementById("zonaSubida").style.display = "none";
             renderizarTabla();
-            renderizarArchivos();
             alert("Programa actualizado correctamente.");
         });
 
-        // Modal y PDFs
+        // Descarga de PDF
         document.getElementById("btnDescargar").addEventListener("click", function() {
             const elemento = document.getElementById("contenedorPrograma");
             html2pdf().set({
@@ -263,51 +237,10 @@
             }).from(elemento).save();
         });
 
-        window.abrirModal = () => document.getElementById("modalExtras").style.display = "flex";
-        window.cerrarModal = () => document.getElementById("modalExtras").style.display = "none";
-
         // Inicialización
         window.onload = function() {
             renderizarTabla();
-            renderizarArchivos();
         };
-
-        // GESTIÓN DE ARCHIVOS (Igual que en la versión anterior)
-        const fileInput = document.getElementById("fileInput");
-        const listaArchivos = document.getElementById("listaArchivos");
-        fileInput.addEventListener("change", function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            if (file.size > 2500000) { alert("El archivo supera los 2.5MB. Comprímelo por favor."); fileInput.value = ""; return; }
-            const reader = new FileReader();
-            reader.onload = function(evento) {
-                try {
-                    let archivos = JSON.parse(localStorage.getItem("extrasXV_ls")) || [];
-                    archivos.push({ nombre: file.name, tipo: file.type, data: evento.target.result });
-                    localStorage.setItem("extrasXV_ls", JSON.stringify(archivos));
-                    renderizarArchivos();
-                    fileInput.value = "";
-                } catch (e) { alert("Memoria llena. Borra otros archivos."); }
-            };
-            reader.readAsDataURL(file);
-        });
-
-        function renderizarArchivos() {
-            listaArchivos.innerHTML = "";
-            let archivos = JSON.parse(localStorage.getItem("extrasXV_ls")) || [];
-            if (archivos.length === 0) { listaArchivos.innerHTML = "<p style='grid-column: span 2; text-align: center; color: #999;'>No hay material extra cargado.</p>"; return; }
-            archivos.forEach((archivo, index) => {
-                const div = document.createElement("div"); div.className = "archivo-item";
-                if (archivo.tipo.includes("image")) { div.innerHTML = `<img src="${archivo.data}"><a href="${archivo.data}" download="${archivo.nombre}">Descargar ${archivo.nombre}</a>`; }
-                else if (archivo.tipo.includes("pdf")) { div.innerHTML = `<img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" style="width:50px;height:50px;margin:20px 0;"><a href="${archivo.data}" download="${archivo.nombre}">Descargar PDF</a>`; }
-                if (modoEdicionActivo) {
-                    const btn = document.createElement("button"); btn.className = "btn-eliminar-archivo"; btn.innerText = "Eliminar"; btn.style.display = "inline-block";
-                    btn.onclick = () => { if(confirm("¿Eliminar?")) { archivos.splice(index, 1); localStorage.setItem("extrasXV_ls", JSON.stringify(archivos)); renderizarArchivos(); } };
-                    div.appendChild(btn);
-                }
-                listaArchivos.appendChild(div);
-            });
-        }
     </script>
 </body>
 </html>
